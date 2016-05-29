@@ -15,6 +15,7 @@ from keras import backend as K
 from keras import activations, initializations, regularizers, constraints
 from keras.engine import InputSpec, Layer, Merge
 from keras.regularizers import ActivityRegularizer
+from keras import initializations
 from theano import sparse
 import theano
 '''
@@ -87,8 +88,8 @@ class MyLayer(Layer):
         2D tensor with shape: `(nb_samples, output_dim)`.
     '''
     def __init__(self, output_dim, init='glorot_uniform', activation='linear', weights=None,
-                 #W_regularizer=None, b_regularizer=None, activity_regularizer=None,
-                 #W_constraint=None, b_constraint=None,
+                 W_regularizer=None, b_regularizer=None, activity_regularizer=None,
+                 W_constraint=None, b_constraint=None,
                  input_output_mat=None,
                  group_gene_dict=None,
                  bias=True, input_dim=None, **kwargs):
@@ -98,14 +99,22 @@ class MyLayer(Layer):
         self.input_dim = input_dim
         self.input_output_mat=input_output_mat
         self.group_gene_dict=group_gene_dict
-        print self.input_output_mat
+        #print self.input_output_mat
         if self.input_output_mat is not None:
                 self.output_dim=self.input_output_mat.shape[1]
-        print 'input_dim: ',self.input_dim
-        print 'output_dim: ',self.output_dim
+        #print 'input_dim: ',self.input_dim
+        #print 'output_dim: ',self.output_dim
         self.bias = bias
         self.initial_weights = weights
         self.input_spec = [InputSpec(ndim=2)]
+        
+        self.W_regularizer = regularizers.get(W_regularizer)
+        self.b_regularizer = regularizers.get(b_regularizer)
+        self.activity_regularizer = regularizers.get(activity_regularizer)
+
+        self.W_constraint = constraints.get(W_constraint)
+        self.b_constraint = constraints.get(b_constraint)
+
         
         if self.input_dim:
             kwargs['input_shape'] = (self.input_dim,)
@@ -113,6 +122,7 @@ class MyLayer(Layer):
 
     def build(self, input_shape):
         #remember to modify here
+        print 'build'
         assert len(input_shape) == 2
         input_dim = input_shape[1]
         self.input_spec = [InputSpec(dtype=K.floatx(),
@@ -123,14 +133,33 @@ class MyLayer(Layer):
         #self.W = self.init((input_dim, self.output_dim),name='{}_W'.format(self.name))
         
         temp_W = np.asarray(self.input_output_mat, dtype=K.floatx())
+
+        #if self.input_output_mat is not None:
+            #temp_W=self.W.get_value()
+        #    temp_W=temp1.get_value()
+        if self.input_output_mat is not None:
+            fan_in, fan_out = initializations.get_fans((input_dim, self.output_dim), dim_ordering='th')
+            scale = np.sqrt(6. / (fan_in + fan_out))
+            for i in range(self.input_output_mat.shape[0]):
+                for j in range(self.input_output_mat.shape[1]):
+                    if  self.input_output_mat[i,j] == 1.:
+                        temp_W[i,j]=np.random.uniform(low=-scale, high=scale)
+            #temp_W=csr_matrix(temp_W)
+            #print(temp_W)
+        #self.W=temp_W
+        #print 'self.W: ',self.W
+            
+        
         temp_W=csr_matrix(temp_W)
-        print temp_W.nnz
+        #print temp_W.nnz
+        #print temp_W.indices
+        #print temp_W.indptr
         #print 'temp_W:',temp_W
         self.W=theano.shared(value=temp_W, name='{}_W'.format(self.name), strict=False)
         
-        print 'self.W.get_value():',self.W.get_value()
+        #print 'self.W.get_value():',self.W.get_value()
 
-        print 'self.W:',self.W
+        #print 'self.W:',self.W
         #print 'self.W.get_value():',self.W.get_value()
         #print 'self.W[1,1]:',self.W[1,1]
         #print 'self.W[1,:]:',self.W[1,:]
@@ -139,26 +168,8 @@ class MyLayer(Layer):
         #value = np.asarray(value, dtype=dtype)
         #return theano.shared(value=value, name=name, strict=False)
         
-        print 'build'
         #print 'self.W: ',self.W.get_value()
         #print 'self.W: ',self.W.get_value()[1:]
-        '''
-        if self.input_output_mat is not None:
-            #temp_W=self.W.get_value()
-            temp_W=temp1.get_value()
-            for i in range(self.input_output_mat.shape[0]):
-                for j in range(self.input_output_mat.shape[1]):
-                    if not self.input_output_mat[i,j] == 1.:
-                        temp_W[i,j]=0
-            #temp_W=csr_matrix(temp_W)
-            print(temp_W)
-            self.W=temp_W
-            print 'self.W: ',self.W
-            
-        else:
-            self.W=temp1
-            print 'self.W: ',self.W.get_value()
-        '''
 
         if self.bias:
             self.b = K.zeros((self.output_dim,),
@@ -169,25 +180,29 @@ class MyLayer(Layer):
         if self.initial_weights is not None:
             self.set_weights(self.initial_weights)
             del self.initial_weights
+        
+        self.regularizers = []
+        if self.W_regularizer:
+            self.W_regularizer.set_param(self.W)
+            self.regularizers.append(self.W_regularizer)
+
+        if self.bias and self.b_regularizer:
+            self.b_regularizer.set_param(self.b)
+            self.regularizers.append(self.b_regularizer)
+
+        if self.activity_regularizer:
+            self.activity_regularizer.set_layer(self)
+            self.regularizers.append(self.activity_regularizer)
+
+        self.constraints = {}
+        if self.W_constraint:
+            self.constraints[self.W] = self.W_constraint
+        if self.bias and self.b_constraint:
+            self.constraints[self.b] = self.b_constraint
 
     def call(self, x, mask=None):
-        #remember to modify here
-        #print 'call'
-        #print 'self.W: ',self.W.get_value()
-        #temp_W=self.W.get_value()
-        #for i in range(self.input_output_mat.shape[0]):
-        #    for j in range(self.input_output_mat.shape[1]):
-        #        if not self.input_output_mat[i,j] == 1.:
-        #            temp_W[i,j]=0
-        #self.W.set_value(temp_W)
-        #print 'self.W: ',self.W.get_value()
         #output = K.dot(x, self.W)
         output = sparse.structured_dot(x, self.W)
-        print output
-        #output[0,0]=0
-        #print output
-        #output = [x.dot(self.W[i,:]) for i in range(self.output_dim)]
-        #print output
         if self.bias:
             output += self.b
         return self.activation(output)
@@ -195,6 +210,20 @@ class MyLayer(Layer):
     def get_output_shape_for(self, input_shape):
         assert input_shape and len(input_shape) == 2
         return (input_shape[0], self.output_dim)
+    def get_config(self):
+        config = {'output_dim': self.output_dim,
+                  'init': self.init.__name__,
+                  'activation': self.activation.__name__,
+                  'W_regularizer': self.W_regularizer.get_config() if self.W_regularizer else None,
+                  'b_regularizer': self.b_regularizer.get_config() if self.b_regularizer else None,
+                  'activity_regularizer': self.activity_regularizer.get_config() if self.activity_regularizer else None,
+                  'W_constraint': self.W_constraint.get_config() if self.W_constraint else None,
+                  'b_constraint': self.b_constraint.get_config() if self.b_constraint else None,
+                  'bias': self.bias,
+                  'input_dim': self.input_dim}
+        base_config = super(MyLayer, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
     
     def set_weights(self, weights):
         '''Sets the weights of the layer, from Numpy arrays.
@@ -217,11 +246,11 @@ class MyLayer(Layer):
         weight_value_tuples = []
         param_values = K.batch_get_value(params)
         for pv, p, w in zip(param_values, params, weights):
-            if pv.shape != w.shape:
-                raise Exception('Layer weight shape ' +
-                                str(pv.shape) +
-                                ' not compatible with '
-                                'provided weight shape ' + str(w.shape))
+#            if pv.shape != w.shape:
+#                raise Exception('Layer weight shape ' +
+#                                str(pv.shape) +
+#                                ' not compatible with '
+#                                'provided weight shape ' + str(w.shape))
             weight_value_tuples.append((p, w))
         tuples=weight_value_tuples
         #K.batch_set_value(weight_value_tuples)

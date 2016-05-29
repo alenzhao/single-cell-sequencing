@@ -126,7 +126,7 @@ class SGD(Optimizer):
         self.decay = K.variable(decay)
 
     def get_updates(self, params, constraints, loss):
-        print 'in SGD get_updates'
+        #print 'in SGD get_updates'
         grads = self.get_gradients(loss, params)
         lr = self.lr * (1. / (1. + self.decay * self.iterations))
         self.updates = [(self.iterations, self.iterations + 1.)]
@@ -147,14 +147,14 @@ class SGD(Optimizer):
         #print self.weights
         #print self.weights[0].get_value()
         for p, g, m in zip(params, grads, self.weights):
-            print p.get_value()
-            print type(p.get_value())
-            print type(p.get_value()) is csr_matrix 
+            #print p.get_value()
+            #print type(p.get_value())
+            #print type(p.get_value()) is csr_matrix 
             #if type(p.get_value()) is csr_matrix:
             #    m=
-            print 'p.type:',p.type
-            print g
-            print 'm:',m
+            #print 'p.type:',p.type
+            #print g
+            #print 'm:',m
             #print g.get_value()
             #v=-lr*g
             #new_p=p+v
@@ -177,7 +177,7 @@ class SGD(Optimizer):
                 new_p = p + self.momentum * v - lr * g
             else:
                 new_p = p + v
-            print 'new_p.type:',new_p.type
+            #print 'new_p.type:',new_p.type
             # apply constraints
             if p in constraints:
                 c = constraints[p]
