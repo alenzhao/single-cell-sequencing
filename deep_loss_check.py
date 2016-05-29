@@ -1,7 +1,7 @@
 import os    
 #os.environ['THEANO_FLAGS'] = "device=gpu0"
 #os.environ['THEANO_FLAGS'] = "floatX=float32,device=gpu0,lib.cnmem=1,allow_gc=False"
-os.environ['THEANO_FLAGS'] = "floatX=float32,device=gpu0,allow_gc=False"
+#os.environ['THEANO_FLAGS'] = "floatX=float32,device=gpu0,allow_gc=False"
 
 import theano
 #theano.config.device = 'gpu'
@@ -139,7 +139,9 @@ def get_output(model, layer, data):
     
 if __name__=='__main__':
     if 1:
-        all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',whitening=True)   
+        all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True)   
+        print all_data[:20,:20]
+        
         data=all_data
         print data.shape
         input_dim = data.shape[1]
@@ -147,8 +149,8 @@ if __name__=='__main__':
         hidden_layer_size=100
         drop_out_rate=1
         batch_size=32
-        epoch_step=1
-        max_iter=1000
+        epoch_step=100
+        max_iter=100000
         activation_func='relu'
         print 'hidden_layer_size= ', hidden_layer_size
         print 'drop_out_rate= ',drop_out_rate
@@ -161,10 +163,10 @@ if __name__=='__main__':
         train_set_index=[x for x in range(all_data.shape[0]) if x not in valid_set_index]
         #print train_set_index
         
-        #train_data=all_data[train_set_index,:]
-        #valid_data=all_data[valid_set_index,:]
-        train_data=unlabeled_data
-        valid_data=labeled_data
+        train_data=all_data[train_set_index,:]
+        valid_data=all_data[valid_set_index,:]
+        #train_data=unlabeled_data
+        #valid_data=labeled_data
         print train_data.shape
         print valid_data.shape
         #model_name='model/NN100Code3StackLandmark'
@@ -193,11 +195,11 @@ if __name__=='__main__':
         #    sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
         #    model.compile(loss='mean_squared_error', optimizer=sgd)
         #model_try={}
-        #model_name='TPM_whitened_data_1layer'
-        #model=keras_denoising_autoencoder_model_1layer(input_dim, hidden_layer_size,drop_out_rate,activation_func)
+        model_name='TPM_whitened_data_1layer'
+        model=keras_denoising_autoencoder_model_1layer(input_dim, hidden_layer_size,drop_out_rate,activation_func)
         
-        model_name='TPM_whitened_data_3layer'
-        model=keras_denoising_autoencoder_model(input_dim, hidden_layer_size,drop_out_rate,activation_func)
+        #model_name='TPM_whitened_data_3layer'
+        #model=keras_denoising_autoencoder_model(input_dim, hidden_layer_size,drop_out_rate,activation_func)
         #for model_name,model in model_try.items():
         f_output=open(model_name+'_deep_loss_check.txt','w') 
         while now_iter<max_iter:
@@ -209,7 +211,7 @@ if __name__=='__main__':
             valid_mse=mean_squared_error(valid_data,reconstructed_valid)
             print 'valid_predict_MSE: ', valid_mse
             #model.fit(labeled_data, labeled_data, batch_size=batch_size, nb_epoch=nb_epoch,verbose=1)
-            model.fit(train_data, train_data, batch_size=batch_size, nb_epoch=epoch_step,verbose=0)
+            model.fit(train_data, train_data, batch_size=batch_size, nb_epoch=epoch_step,verbose=1)
             #model.fit(unlabeled_data, unlabeled_data, sample_weight=unlabeled_weights, batch_size=batch_size, nb_epoch=epoch_step,verbose=1)
             now_iter+=epoch_step
             #model.save_weights(model_name+'_'+str(now_iter)+'.h5', overwrite=True)

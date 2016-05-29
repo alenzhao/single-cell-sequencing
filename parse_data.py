@@ -42,7 +42,7 @@ def load_data(sample_label_dict,gene_sample_expression_dict,data_file_name,label
             print 'sample ID conflict: '+ID
     #for i,x in enumerate(label_sample):
     #   if x not in labels:
-    #       labels.append(x)
+    #      labels.append(x)
     #   label_sample[i]=labels.index(x)
         
     #label=[IDs.index(x) for x in label]
@@ -115,11 +115,11 @@ def gen_nn_data(sample_label_dict,gene_sample_expression_dict):
         label[sample_index]=label_ID
     #for index in range(len(label)):
     #   if label[index]==0:
-    #       print samples[index]
+    #      print samples[index]
         
     return data,label
 
-def load_integrated_data(filename,landmark=False,whitening=False):
+def load_integrated_data(filename,landmark=False,sample_normalize=True,gene_normalize=False,ref_gene_file=None):
     all_data=[]
     all_sample_ID=[]
     labeled_sample_ID=[]
@@ -130,6 +130,10 @@ def load_integrated_data(filename,landmark=False,whitening=False):
     all_label=[]
     labeled_label=[]
     #print filename
+    if ref_gene_file is not None:
+        group_genes=open(ref_gene_file).readlines()[0].split('\t')
+    #print len(group_genes)
+    #print group_genes
     lines=open(filename).readlines()
     Sample_ID=lines[0].replace('\n','').split('\t')[1:]
     labels=lines[1].replace('\n','').split('\t')[1:]
@@ -160,25 +164,37 @@ def load_integrated_data(filename,landmark=False,whitening=False):
     #print labels
     #print Sample_ID
     #for line in lines:
-    landmark_genes=load_landmark_gene_names()
+    #landmark_genes=load_landmark_gene_names()
     for line in lines[3:]:
         splits=line.replace('\n','').split('\t')
         gene=splits[0]
-        if landmark and gene not in landmark_genes.keys():
+        #print gene
+    #   if landmark and gene not in landmark_genes.keys():
+    #       continue
+        if ref_gene_file is not None and gene not in group_genes:
             continue
         gene_names.append(gene)
         #print splits[1:]
         all_data.append(splits[1:])
         #print len(splits)
     all_data=np.array(all_data,dtype='float32')
-    if whitening:
+    #print all_data.shape
+    if sample_normalize:
         for j in range(all_data.shape[1]):
-            mean=np.mean(all_data[:,j])
-            std=np.std(all_data[:,j])
-            if std==0:
-                print 'whitening: std==0 data: ',j,mean,std
+            s=np.sum(all_data[:,j])
+            if s ==0:
+                print 'normalize sum==0: sample',j
             else:
-                all_data[:,j]=(all_data[:,j]-mean)/std
+                all_data[:,j]=all_data[:,j]/s
+    if gene_normalize:
+        for j in range(all_data.shape[0]):
+            mean=np.mean(all_data[j,:])
+            std=np.std(all_data[j,:])
+            if std==0:
+                print 'gene_normalize: std==0 data: ',j,mean,std
+            else:
+                all_data[j,:]=(all_data[j,:]-mean)/std
+            #print all_data[j,:]
     labeled_data=np.zeros((all_data.shape[0],len(label_index)),dtype="float32")
     unlabeled_data=np.zeros((all_data.shape[0],len(unlabeled_index)),dtype="float32")
     count=0
@@ -211,6 +227,28 @@ def load_integrated_data(filename,landmark=False,whitening=False):
     #print all_data.shape
     #print gene_names
     return all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names
+def load_group_gene_index_dict(gene_names,group_file):
+    group_lines=open(group_file).readlines()
+    #print group_lines
+    #print gene_names
+    group_gene_index_dict=defaultdict(lambda:[])
+    for line in group_lines:
+        #print line
+        splits=line.replace('\n','').replace('\r','').split('\t')
+        #print splits
+        gn=splits[0]
+        for sp in splits[1:]:
+            group_gene_index_dict[gn].append(gene_names.index(sp))
+    m=max(map(max,group_gene_index_dict.values()))+1
+    #print m
+    sorted_group_names=sorted(group_gene_index_dict.keys())
+    output_mat=np.zeros((len(sorted_group_names),m),dtype="float32")
+    for index,key in enumerate(sorted_group_names):
+    #   print key
+        for d in group_gene_index_dict[key]:
+            output_mat[index,d]=1
+    #print output_mat
+    return group_gene_index_dict, sorted_group_names, output_mat
 if __name__=="__main__":
     '''
     sample_label_dict=defaultdict(lambda: None)
@@ -224,10 +262,16 @@ if __name__=="__main__":
     '''
     #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/mouse_1_4_6_7_10_16.txt')
     
-    all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',whitening=True)   
-    print all_data.shape
-    print labeled_data.shape
-
+    #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',whitening=True)   
+    #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True)   
+    all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True,ref_gene_file='cluster_genes.txt')   
+    print 'all_data.shape:',all_data.shape
+    print 'labeled_data.shape:',labeled_data.shape
+    #print all_data[:5,:5]
+    group_gene_index_dict, sorted_group_names, output_mat= load_group_gene_index_dict(gene_names,'ppi_tf_merge_cluster.txt')
+    #print group_gene_index_dict.values()
+    print 'len(sorted_group_names): ',len(sorted_group_names)
+    print 'output_mat.shape:',output_mat.shape
     #print all_weights
     #print labeled_weights
     #print unlabeled_weights
