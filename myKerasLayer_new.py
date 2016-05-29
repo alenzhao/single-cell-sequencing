@@ -124,7 +124,7 @@ class MyLayer(Layer):
         
         temp_W = np.asarray(self.input_output_mat, dtype=K.floatx())
         temp_W=csr_matrix(temp_W)
-        
+        print temp_W.nnz
         #print 'temp_W:',temp_W
         self.W=theano.shared(value=temp_W, name='{}_W'.format(self.name), strict=False)
         
