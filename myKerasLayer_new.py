@@ -122,7 +122,7 @@ class MyLayer(Layer):
 
     def build(self, input_shape):
         #remember to modify here
-        print 'build'
+        #print 'build'
         assert len(input_shape) == 2
         input_dim = input_shape[1]
         self.input_spec = [InputSpec(dtype=K.floatx(),
@@ -139,18 +139,19 @@ class MyLayer(Layer):
         #    temp_W=temp1.get_value()
         if self.input_output_mat is not None:
             fan_in, fan_out = initializations.get_fans((input_dim, self.output_dim), dim_ordering='th')
+            print (fan_in, fan_out)
             scale = np.sqrt(6. / (fan_in + fan_out))
             for i in range(self.input_output_mat.shape[0]):
                 for j in range(self.input_output_mat.shape[1]):
                     if  self.input_output_mat[i,j] == 1.:
                         temp_W[i,j]=np.random.uniform(low=-scale, high=scale)
             #temp_W=csr_matrix(temp_W)
-            #print(temp_W)
         #self.W=temp_W
         #print 'self.W: ',self.W
             
         
         temp_W=csr_matrix(temp_W)
+        #print(temp_W)
         #print temp_W.nnz
         #print temp_W.indices
         #print temp_W.indptr
@@ -244,8 +245,8 @@ class MyLayer(Layer):
         if not params:
             return
         weight_value_tuples = []
-        param_values = K.batch_get_value(params)
-        for pv, p, w in zip(param_values, params, weights):
+        #param_values = K.batch_get_value(params)
+        for  p, w in zip(params, weights):
 #            if pv.shape != w.shape:
 #                raise Exception('Layer weight shape ' +
 #                                str(pv.shape) +

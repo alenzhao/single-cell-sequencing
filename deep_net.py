@@ -109,15 +109,15 @@ if __name__=='__main__':
     #test_nn_things()
     if 1:
         #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True )   
-        all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data_try.txt',sample_normalize=True,gene_normalize=True )   
-        group_gene_index_dict, sorted_group_names, group_gene_mat = parse_data.load_group_gene_index_dict(gene_names,'group_try.txt')
+        #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data_try.txt',sample_normalize=True,gene_normalize=True )   
+        #group_gene_index_dict, sorted_group_names, group_gene_mat = parse_data.load_group_gene_index_dict(gene_names,'group_try.txt')
         #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True )   
         #group_gene_index_dict, sorted_group_names, group_gene_mat = parse_data.load_group_gene_index_dict(gene_names,'ppi_tf_merge_cluster.txt')
         
-        '''
+        
         all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True,ref_gene_file='cluster_genes.txt')   
         group_gene_index_dict, sorted_group_names, group_gene_mat= parse_data.load_group_gene_index_dict(gene_names,'ppi_tf_merge_cluster.txt')
-        '''
+        
         data=all_data
         #dict_weights={}
         #print(len(all_weights))
@@ -133,13 +133,13 @@ if __name__=='__main__':
         hidden_layer_size=100
         drop_out_rate=1
         batch_size=32
-        epoch_step=10
-        max_iter=100
+        epoch_step=100
+        max_iter=2500
         print 'hidden_layer_size= ', hidden_layer_size
         print 'drop_out_rate= ',drop_out_rate
         print 'batch_size= ',batch_size
         print 'epoch_step= ',epoch_step
-        now_iter=50
+        now_iter=1000
         #model_name='model/NN100Code3StackLandmark'
         #model_name='model/NN100Code1layerLandmark'
         #model_name='model/NN100Code1layerAllgene'
@@ -154,7 +154,7 @@ if __name__=='__main__':
         #model_name='model/NN100Code1layerAllgeneNData01040607081016linear'
         #model_name='model/NN100Code1layerAllgeneNDataDX01040607081016linear'
         #activation_func='linear'
-        #model_name='model/NN100Code1layerAllgeneNData01040607081016_tanh'
+        #model_name='model/NN100Code1layerAllgeneSNGNData01040607081016_PPITF_tanh'
         #model_name='model/NN100Code1layerAllgeneNDataDX01040607081016_tanh'
         #activation_func='tanh'
         #model_name='model/NN100Code1layerAllgeneNData01040607081016_relu'
@@ -164,8 +164,17 @@ if __name__=='__main__':
         #model_name='model/NN100Code1layerAllgeneNDataDX01040607081016_sigmoid'
         #activation_func='sigmoid'
         
-        model_name='data_try_tanh'
-        activation_func='tanh'
+        #model_name='data_try_tanh'
+        #activation_func='tanh'
+        
+        #model_name='model/NN100Code1layerAllgeneSNGNData01040607081016_PPITF_tanh'
+        #activation_func='tanh'
+        #model_name='model/NN100Code1layerAllgeneSNGNData01040607081016_PPITF_relu'
+        #activation_func='relu'
+        #model_name='model/NN100Code1layerAllgeneSNGNData01040607081016_PPITF_sigmoid'
+        #activation_func='sigmoid'
+        model_name='model/NN100Code1layerAllgeneSNGNData01040607081016_PPITF_linear'
+        activation_func='linear'
 
         print 'activation_func= ',activation_func
         #model_name='model/NN100Code3StackAllgeneData01040607081016unlabeled'
@@ -186,7 +195,7 @@ if __name__=='__main__':
             #model.save_weights(model_name+'_'+str(0)+'.h5', overwrite=True)
             #save_model_weight_to_pickle(model,model_name+'_'+str(0)+'.pickle')
             save_model_weight_to_pickle(model,model_name+'_'+str(0)+'.pickle')
-            load_model_weight_from_pickle(model,model_name+'_'+str(0)+'.pickle')
+            #load_model_weight_from_pickle(model,model_name+'_'+str(0)+'.pickle')
         #load_model_weight_from_pickle(model,file_name):
             f.close()
         else:

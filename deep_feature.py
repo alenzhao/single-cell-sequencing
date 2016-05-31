@@ -17,48 +17,16 @@ import parse_data
 import time
 import math
 import pickle
-def load_data(landmark=True):
-	sample_label_dict=defaultdict(lambda: None)
-	gene_sample_expression_dict=defaultdict(lambda: 0)
-	sample_label_dict,gene_sample_expression_dict=parse_data.load_data(sample_label_dict,gene_sample_expression_dict,'mouse_10_expr_RPKM.txt','mouse_10_label.txt',landmark)
-	#sample_label_dict,gene_sample_expression_dict=parse_data.load_data(sample_label_dict,gene_sample_expression_dict,'mouse_4_expr_RPKM.txt','mouse_4_label.txt')
-	data,label=parse_data.gen_nn_data(sample_label_dict,gene_sample_expression_dict)
-	return data,label
-
-def keras_denoising_autoencoder_model(input_dim, hidden_layer_size,drop_out_rate,activation_func):
-	# input shape: (nb_samples, input_dim)
-	#middle_layer_size=int(math.sqrt(input_dim*hidden_layer_size))
-	middle_layer_size=int(math.sqrt(input_dim/hidden_layer_size)*hidden_layer_size)
-	
-	#middle_layer_size=2*hidden_layer_size
-	print 'hidden_layer_size = ',hidden_layer_size
-	print 'middle_layer_size = ',middle_layer_size
-	model = models.Sequential()
-	model.add(Dense(middle_layer_size,input_dim=input_dim,activation=activation_func))
-	model.add(Dense(hidden_layer_size,activation=activation_func))
-	model.add(Dense(middle_layer_size, input_dim=hidden_layer_size,activation=activation_func))
-	model.add(Dense(input_dim,activation=activation_func))
-	
-	#model.add(autoencoder)
-	#model.layers[0].build() 
-
-	# training the autoencoder:
-	sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-	model.compile(loss='mean_squared_error', optimizer=sgd)
-	return model
-
-def get_output(model, layer, data):
-    #get_activations = theano.function([model.layers[0].input], model.layers[layer].get_output(train=False), allow_input_downcast=True)
-    get_activations = theano.function([model.layers[0].input], model.layers[layer].output)
-    activations = get_activations(data) # same result as above
-    return activations
-	
+from deep_net import *
 
 if __name__=='__main__':
 	#test_nn_things()
     #all_data_landmark, labeled_data_landmark,unlabeled_data,label_unique_list,all_label, labeled_label,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/mouse_1_4_6_7_8_10_16.txt', landmark=True)
     #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/mouse_1_4_6_7_8_10_16.txt', landmark=False)
-    all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',whitening=True)   
+    #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True, gene_normalize=True)   
+    #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=False, gene_normalize=True)   
+    all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=parse_data.load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True,ref_gene_file='cluster_genes.txt')   
+    #group_gene_index_dict, sorted_group_names, group_gene_mat= parse_data.load_group_gene_index_dict(gene_names,'ppi_tf_merge_cluster.txt')
     #data_landmark=[all_data_landmark, labeled_data_landmark]
     #data_allgene=[all_data, labeled_data]
     #all_data_list=[all_data_landmark, all_data]
@@ -78,8 +46,8 @@ if __name__=='__main__':
     
     #model_100Code3StackAllgene='NN100Code3StackAllgeneData01040607081016'
     #model_100Code1LayerAllgene='NN100Code1layerAllgeneData01040607081016'
-    model_100Code3StackAllgene='NN100Code3StackAllgeneData01040607081016unlabeled'
-    model_100Code1LayerAllgene='NN100Code1layerAllgeneData01040607081016unlabeled'
+    #model_100Code3StackAllgene='NN100Code3StackAllgeneData01040607081016unlabeled'
+    #model_100Code1LayerAllgene='NN100Code1layerAllgeneData01040607081016unlabeled'
     model_names=[]
     train_iter={}
     #train_iter.append(20500)
@@ -87,15 +55,37 @@ if __name__=='__main__':
     #train_iter.append(13000)
     #train_iter.append(4800)
     #train_iter=[0,100,500,1000]
-    train_iter=[i*10 for i in range(11)]
+    train_iter=[i*100 for i in range(5)]
+    train_iter.extend([i*500 for i in range(1,5)])
+    #train_iter=[i*10 for i in range(11)]
     #train_iter[model_100Code3StackAllgene]=0
     #train_iter[model_100Code1LayerAllgene]=0
     #train_iter.append(1000)
     #model_names.append(model_100Code1LayerLandmark)
-    model_names.append(model_100Code1LayerAllgene)
+    #model_names.append(model_100Code1LayerAllgene)
     #model_names.append(model_100Code3StackLandmark)
-    model_names.append(model_100Code3StackAllgene)
+    #model_names.append(model_100Code3StackAllgene)
+    
+    
+    #model_names.append('NN100Code1layerAllgeneNData01040607081016relu')
+    #model_names.append('NN100Code1layerAllgeneNData01040607081016tanh')
+    #model_names.append('NN100Code1layerAllgeneNData01040607081016sigmoid')
+    #model_names.append('NN100Code1layerAllgeneNDataDX01040607081016relu')
+    #model_names.append('NN100Code1layerAllgeneNDataDX01040607081016tanh')
+    #model_names.append('NN100Code1layerAllgeneNDataDX01040607081016sigmoid')
+        
+    model_name='NN100Code1layerAllgeneSNGNData01040607081016_PPITF_tanh'
+    model_names.append(model_name)
+    model_name='NN100Code1layerAllgeneSNGNData01040607081016_PPITF_relu'
+    model_names.append(model_name)
+    model_name='NN100Code1layerAllgeneSNGNData01040607081016_PPITF_sigmoid'
+    model_names.append(model_name)
+    model_name='NN100Code1layerAllgeneSNGNData01040607081016_PPITF_linear'
+    model_names.append(model_name)
+    
     output_dict={}
+    custom_obj={}
+    custom_obj['MyLayer']=MyLayer
     #output_dict["all_data_landmark"]=all_data_landmark
     #output_dict["all_data"]=all_data
     #output_dict["labeled_data_landmark"]=labeled_data_landmark
@@ -107,8 +97,10 @@ if __name__=='__main__':
     for iteration in train_iter:
         for model_name in model_names:
             print  'model_name: ', model_name
-            model = model_from_json(open('model/'+model_name+'.json').read())
-            model.load_weights('model/'+model_name+'_'+str(iteration)+'.h5')
+            #model = model_from_json(open('model/'+model_name+'.json').read())
+            model = model_from_json(open('model/'+model_name+'.json').read(),custom_objects=custom_obj)
+            #model.load_weights('model/'+model_name+'_'+str(iteration)+'.h5')
+            load_model_weight_from_pickle(model,'model/'+model_name+'_'+str(iteration)+'.pickle')
             model.compile(optimizer='sgd', loss='mse')
             recovered_all_data = model.predict(all_data)
             print 'reconstruct error for all data:'

@@ -183,7 +183,8 @@ def load_integrated_data(filename,landmark=False,sample_normalize=True,gene_norm
         for j in range(all_data.shape[1]):
             s=np.sum(all_data[:,j])
             if s ==0:
-                print 'normalize sum==0: sample',j
+                s=0
+                #print 'normalize sum==0: sample',j
             else:
                 all_data[:,j]=all_data[:,j]/s
     if gene_normalize:
@@ -191,7 +192,8 @@ def load_integrated_data(filename,landmark=False,sample_normalize=True,gene_norm
             mean=np.mean(all_data[j,:])
             std=np.std(all_data[j,:])
             if std==0:
-                print 'gene_normalize: std==0 data: ',j,mean,std
+                std=0
+                #print 'gene_normalize: std==0 data: ',j,mean,std
             else:
                 all_data[j,:]=(all_data[j,:]-mean)/std
             #print all_data[j,:]
