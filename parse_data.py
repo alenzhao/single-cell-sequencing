@@ -266,14 +266,21 @@ if __name__=="__main__":
     
     #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',whitening=True)   
     #all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True)   
-    all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True,ref_gene_file='cluster_genes.txt')   
+    all_data, labeled_data,unlabeled_data,label_unique_list,all_label, labeled_label, all_weights, labeled_weights, unlabeled_weights,all_sample_ID,labeled_sample_ID,unlabeled_sample_ID,gene_names=load_integrated_data('../data/TPM_mouse_1_4_6_7_8_10_16.txt',sample_normalize=True,gene_normalize=True,ref_gene_file='../cluster_genes.txt')   
     print 'all_data.shape:',all_data.shape
     print 'labeled_data.shape:',labeled_data.shape
+    count_dict=defaultdict(lambda:0)
+    for lab in labeled_label:
+        count_dict[lab]+=1
+    print count_dict
+    for key,val in count_dict.items():
+        print label_unique_list[key]
+        print val
     #print all_data[:5,:5]
-    group_gene_index_dict, sorted_group_names, output_mat= load_group_gene_index_dict(gene_names,'ppi_tf_merge_cluster.txt')
+    #group_gene_index_dict, sorted_group_names, output_mat= load_group_gene_index_dict(gene_names,'ppi_tf_merge_cluster.txt')
     #print group_gene_index_dict.values()
-    print 'len(sorted_group_names): ',len(sorted_group_names)
-    print 'output_mat.shape:',output_mat.shape
+    #print 'len(sorted_group_names): ',len(sorted_group_names)
+    #print 'output_mat.shape:',output_mat.shape
     #print all_weights
     #print labeled_weights
     #print unlabeled_weights

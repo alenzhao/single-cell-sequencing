@@ -170,7 +170,7 @@ class SGD(Optimizer):
             #    v = self.momentum * m - lr * g  # velocity
                 #v= sparse.basic.sub(self.momentum*m,lr*g)
             
-            v=-lr*g
+            #v=-lr*g
             #print m
             #print m.get_value()
             if self.nesterov:
